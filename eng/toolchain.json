@@ -1,0 +1,6 @@
+{
+  "sdk": "10.0.303",
+  "workloadSet": "10.0.303.1",
+  "mauiControls": "10.0.101",
+  "skiaSharp": "4.152.0"
+}

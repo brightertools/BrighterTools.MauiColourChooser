@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <PackageId>BrighterTools.ColourMath</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <Description>Portable .NET RGB/HSV conversion, hexadecimal validation and colour chooser geometry. No MAUI dependency.</Description>
+  </PropertyGroup>
+</Project>

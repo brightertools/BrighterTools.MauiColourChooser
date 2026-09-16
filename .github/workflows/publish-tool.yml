@@ -1,0 +1,87 @@
+name: publish-tool
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Optional version override applied to both packages
+        required: false
+        type: string
+      publish_to_nuget:
+        description: Publish both packages to nuget.org (requires trusted publishing setup)
+        required: true
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nuget-release
+  cancel-in-progress: false
+
+jobs:
+  pack-and-publish:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-2025
+    timeout-minutes: 45
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        with:
+          global-json-file: global.json
+      - name: Check publishing configuration
+        if: inputs.publish_to_nuget
+        env:
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_USER)) {
+            throw 'Set the production environment variable NUGET_USER to the NuGet account username.'
+          }
+      - name: Install pinned workloads and restore
+        run: ./eng/bootstrap.ps1
+      - name: Test portable maths
+        run: dotnet test tests/BrighterTools.ColourMath.Tests/BrighterTools.ColourMath.Tests.csproj -c Release --no-restore
+      - name: Build Windows demo
+        run: dotnet build samples/ChooserDemo/ChooserDemo.csproj -f net10.0-windows10.0.19041.0 -c Release --no-restore
+      - name: Compile managed Mac demo
+        run: dotnet build samples/ChooserDemo/ChooserDemo.csproj -f net10.0-maccatalyst -t:Compile -p:EnableCodeSigning=false --no-restore
+      - name: Pack and verify both libraries
+        id: pack
+        env:
+          PACKAGE_VERSION: ${{ inputs.version }}
+        run: ./eng/pack.ps1 -Version $env:PACKAGE_VERSION
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: nuget-release
+          path: ${{ steps.pack.outputs.directory }}/*
+          if-no-files-found: error
+      - name: NuGet trusted login
+        if: inputs.publish_to_nuget
+        uses: NuGet/login@ebc737b6fc418a6ca0073cf116ec8dc156d8b81e # v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+      - name: Publish maths then chooser
+        if: inputs.publish_to_nuget
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+          PACKAGE_DIRECTORY: ${{ steps.pack.outputs.directory }}
+          PACKAGE_VERSION: ${{ steps.pack.outputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          foreach ($id in @('BrighterTools.ColourMath', 'BrighterTools.MauiColourChooser')) {
+            $package = Join-Path $env:PACKAGE_DIRECTORY "$id.$($env:PACKAGE_VERSION).nupkg"
+            dotnet nuget push $package --source https://api.nuget.org/v3/index.json --api-key $env:NUGET_API_KEY --skip-duplicate
+            if ($LASTEXITCODE -ne 0) { throw "Publishing $id failed." }
+          }

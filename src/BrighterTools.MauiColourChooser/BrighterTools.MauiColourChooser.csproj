@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net10.0-windows10.0.19041.0;net10.0-maccatalyst</TargetFrameworks>
+    <TargetFrameworks Condition="!$([MSBuild]::IsOSPlatform('windows'))">net10.0-maccatalyst</TargetFrameworks>
+    <UseMaui>true</UseMaui>
+    <MauiVersion>10.0.101</MauiVersion>
+    <PackageId>BrighterTools.MauiColourChooser</PackageId>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'maccatalyst'">18.2</SupportedOSPlatformVersion>
+    <Description>MIT-licensed MAUI colour wheel and square chooser with RGB, HSV and hexadecimal editors for Windows and Mac Catalyst.</Description>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../BrighterTools.ColourMath/BrighterTools.ColourMath.csproj" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.101" />
+    <PackageReference Include="SkiaSharp.Views.Maui.Controls" Version="4.152.0" />
+  </ItemGroup>
+</Project>

@@ -1,0 +1,30 @@
+<Project>
+  <PropertyGroup>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <Version>0.9.1</Version>
+    <Authors>Brighter Tools Limited</Authors>
+    <Company>Brighter Tools Limited</Company>
+    <Copyright>Copyright (c) 2026 Brighter Tools Limited</Copyright>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageProjectUrl>https://github.com/brightertools/BrighterTools.MauiColourChooser</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/brightertools/BrighterTools.MauiColourChooser</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <PackageTags>BrighterTools;colour;color;MAUI;RGB;HSV;colour-picker</PackageTags>
+    <PackageReleaseNotes>Initial public MIT-licensed release candidate. Wheel and square selection, RGB/HSV/hex editing, compact layouts and portable colour maths. See RELEASE_NOTES.md in the repository.</PackageReleaseNotes>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)README.md" Pack="true" PackagePath="/" />
+    <None Include="$(MSBuildThisFileDirectory)LICENSE" Pack="true" PackagePath="/" />
+    <None Include="$(MSBuildThisFileDirectory)THIRD_PARTY_NOTICES.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+</Project>
