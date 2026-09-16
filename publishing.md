@@ -23,9 +23,19 @@ Output is `artifacts/nuget/<version>/`, containing two .nupkg and two .snupkg fi
 
 Use that folder as an additional local feed when testing consumption:
 
-```powershell
-dotnet add YourMauiApp.csproj package BrighterTools.MauiColourChooser --version 0.9.1 --source C:/path/to/artifacts/nuget/0.9.1
+Add both sources to a NuGet.config beside the consumer project:
+
+```xml
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="local-chooser" value="C:/path/to/artifacts/nuget/0.9.1" />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+  </packageSources>
+</configuration>
 ```
+
+Then run `dotnet add YourMauiApp.csproj package BrighterTools.MauiColourChooser --version 0.9.1`.
 
 Keep nuget.org available for third-party dependencies. A project reference does not test the packaged dependency graph; validate a consumer using the actual packages before release.
 
@@ -58,7 +68,7 @@ Create a NuGet.org Trusted Publishing policy with:
 | Package scope | Both `BrighterTools.ColourMath` and `BrighterTools.MauiColourChooser` |
 | Permissions | Publish new packages for the first release, and new versions for later releases |
 
-Use the NuGet user/organization that will own the packages and confirm the account has the appropriate publishing rights. If the UI cannot scope two exact IDs in one policy, create separate policies with the same repository/workflow/environment, one for each ID. No long-lived NuGet API key is required.
+Use the NuGet user/organization that will own the packages and confirm the account has the appropriate publishing rights. Choose a package scope covering both IDs; the `BrighterTools.*` glob covers both. Limit the scope to these two IDs if your policy configuration supports that. No long-lived NuGet API key is required.
 
 See [NuGet's official trusted-publishing setup](https://learn.microsoft.com/en-us/nuget/nuget-org/trusted-publishing) and [NuGet/login](https://github.com/NuGet/login) for current policy fields and token-exchange behaviour.
 

@@ -13,7 +13,7 @@ $output = Join-Path $root "artifacts/nuget/$Version"
 Push-Location $root
 try {
     foreach ($project in @('BrighterTools.ColourMath', 'BrighterTools.MauiColourChooser')) {
-        dotnet pack (Join-Path $root "src/$project/$project.csproj") -c Release "-p:Version=$Version" -p:EnableCodeSigning=false -o $output
+        dotnet pack (Join-Path $root "src/$project/$project.csproj") -c Release "-p:Version=$Version" -p:EnableCodeSigning=false -p:ContinuousIntegrationBuild=true -o $output
         if ($LASTEXITCODE -ne 0) { throw "Packing $project failed." }
     }
     & (Join-Path $PSScriptRoot 'verify-packages.ps1') -Directory $output -Version $Version
