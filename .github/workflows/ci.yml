@@ -33,7 +33,7 @@ jobs:
       - name: Test portable maths
         run: dotnet test tests/BrighterTools.ColourMath.Tests/BrighterTools.ColourMath.Tests.csproj -c Release --no-restore
       - name: Build Windows demo
-        run: dotnet build samples/ChooserDemo/ChooserDemo.csproj -f net10.0-windows10.0.19041.0 -c Release --no-restore
+        run: dotnet build samples/ChooserDemo/ChooserDemo.csproj -f net10.0-windows10.0.19041.0 -c Release
       - name: Compile managed Mac demo
         run: dotnet build samples/ChooserDemo/ChooserDemo.csproj -f net10.0-maccatalyst -t:Compile -p:EnableCodeSigning=false --no-restore
       - name: Pack and verify both libraries
