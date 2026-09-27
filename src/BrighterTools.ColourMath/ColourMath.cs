@@ -4,6 +4,8 @@ namespace BrighterTools.ColourMath;
 public readonly record struct RgbColour(byte R, byte G, byte B)
 {
     public string Hex => $"{R:X2}{G:X2}{B:X2}";
+    /// <summary>Eight uppercase digits in CSS order: RRGGBBAA.</summary>
+    public string HexWithAlpha(byte alpha) => $"{Hex}{alpha:X2}";
 }
 public enum WheelSaturationCurve { Linear, ExpandedWhites, Balanced, CompactWhites }
 
@@ -41,6 +43,19 @@ public static class ColourMath
         if (text?.Length != 6 || !text.All(char.IsAsciiHexDigit) ||
             !uint.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var n)) return false;
         colour = new((byte)(n >> 16), (byte)(n >> 8), (byte)n);
+        return true;
+    }
+    /// <summary>Accepts six (opaque) or eight (CSS RRGGBBAA) hexadecimal digits with an optional leading #.</summary>
+    public static bool TryHexWithAlpha(string? text, out RgbColour colour, out byte alpha)
+    {
+        colour = default; alpha = 255;
+        text = text?.Trim();
+        if (text?.StartsWith('#') == true) text = text[1..];
+        if (text?.Length == 6) return TryHex(text, out colour);
+        if (text?.Length != 8 || !text.All(char.IsAsciiHexDigit) ||
+            !uint.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var n)) return false;
+        colour = new((byte)(n >> 24), (byte)(n >> 16), (byte)(n >> 8));
+        alpha = (byte)n;
         return true;
     }
     public static bool TryNumber(string? text, double maximum, bool integer, out double value) =>

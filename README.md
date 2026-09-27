@@ -3,7 +3,7 @@
 [![CI](https://github.com/brightertools/BrighterTools.MauiColourChooser/actions/workflows/ci.yml/badge.svg)](https://github.com/brightertools/BrighterTools.MauiColourChooser/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://github.com/brightertools/BrighterTools.MauiColourChooser/blob/main/LICENSE)
 
-Reusable .NET MAUI colour selection for **Windows and Mac Catalyst**, licensed under standard MIT. Choose opaque, 8-bit RGB colours with a wheel, saturation/value square, RGB or HSV sliders, numeric fields and hexadecimal input.
+Reusable .NET MAUI colour selection for **Windows and Mac Catalyst**, licensed under standard MIT. Choose 8-bit RGB colours (optionally with alpha) with a wheel, saturation/value square, RGB or HSV sliders, numeric fields and hexadecimal input.
 
 The host application owns confirmation buttons, clipboard operations, history, persistence and window layout. The library does not capture the desktop or request screen-recording permission.
 
@@ -46,14 +46,15 @@ See [usage.md](https://github.com/brightertools/BrighterTools.MauiColourChooser/
 
 ## Behaviour
 
-- Wheel/Square and RGB/HSV mode switches; six-digit uppercase hex with optional input `#`.
+- Wheel/Square and RGB/HSV mode switches; an RGB HEX input group with a fixed `#` prefix and a six-digit editor. Pasted values may include `#`; valid prefixed input is normalized to avoid displaying it twice.
 - Two-way colour binding, a colour-changed event and read-only input validity.
 - Invalid or incomplete text keeps the last valid colour and shows inline feedback.
 - Hue is retained through grey/black selections.
 - Theme-aware native inputs and keyboard alternatives to pointer dragging.
 - Comfortable layout by default; Compact layout uses two columns at 340 layout units and stacks below that width.
 - Expandable numeric sliders, independent control instances and optional host-provided icon fonts.
-- No alpha, palettes, named colours, LAB editor or mobile targets in this version.
+- Optional alpha (`IsAlphaEnabled`, off by default): an opacity strip, an A editor (0–255 in RGB, 0–100% in HSV) and eight-digit `RRGGBBAA` hex. Without it, colours stay opaque exactly as before.
+- No palettes, named colours, LAB editor or mobile targets in this version.
 
 ## Build from source
 

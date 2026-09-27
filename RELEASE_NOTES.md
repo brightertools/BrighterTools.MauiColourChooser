@@ -1,5 +1,10 @@
 # Release notes
 
+## Unreleased
+
+- Added optional alpha: `IsAlphaEnabled` (default false), an opacity strip with checkerboard, an A editor and eight-digit RRGGBBAA hex. Opaque behaviour and the six-digit editor are unchanged when disabled.
+- `ColourMath.TryHexWithAlpha` and `RgbColour.HexWithAlpha` for portable RGBA hex parsing and formatting.
+
 ## 0.9.1 - public release candidate (not yet published)
 
 - Prepared both packages for public distribution under standard MIT.

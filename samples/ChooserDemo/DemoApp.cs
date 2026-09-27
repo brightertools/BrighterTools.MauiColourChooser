@@ -24,7 +24,8 @@ public sealed class DemoApp : Application
         var theme = new Picker { ItemsSource = new[] { "System", "Light", "Dark" }, SelectedIndex = 0, Title = "Appearance" };
         theme.SelectedIndexChanged += (_, _) => UserAppTheme = theme.SelectedIndex switch { 1 => AppTheme.Light, 2 => AppTheme.Dark, _ => AppTheme.Unspecified };
         var stack = new VerticalStackLayout { Padding = 16, Spacing = 12, Children = { theme, new Label { Text = "First chooser (two-way binding)" }, swatch, reset, first,
-            new Label { Text = "Independent second chooser" }, second, new Label { Text = "Standalone wheel" }, new ColourWheel { SelectedColour = Colors.Lime } } };
+            new Label { Text = "Independent second chooser" }, second,
+            new Label { Text = "Chooser with alpha (IsAlphaEnabled)" }, new ColourChooser { IsAlphaEnabled = true, SelectedColour = Color.FromRgba(51, 102, 204, 160) }, new Label { Text = "Standalone wheel" }, new ColourWheel { SelectedColour = Colors.Lime } } };
         var page = new ContentPage { Title = "Colour chooser demo", Content = new ScrollView { Content = stack } };
         page.SetAppThemeColor(ContentPage.BackgroundColorProperty, Colors.White, Color.FromArgb("#202020"));
         bool tested = false;

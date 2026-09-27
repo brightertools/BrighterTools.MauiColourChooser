@@ -35,7 +35,7 @@ internal static class SmokeChecks
             hex.Text = "#12";
             Check(!first.IsInputValid && first.SelectedColour.ToHex() == original, "Incomplete hex preserves the last valid colour");
             hex.Text = "#12abEF";
-            Check(first.IsInputValid && first.SelectedColour.ToHex() == "#12ABEF", "Valid hex publishes a normalized colour");
+            Check(first.IsInputValid && first.SelectedColour.ToHex() == "#12ABEF" && hex.Text == "12ABEF", "Pasted hex publishes a normalized colour without duplicating the fixed hash prefix");
             var red = first.GetVisualTreeDescendants().OfType<Entry>().Single(e => SemanticProperties.GetDescription(e) == "Red");
             red.Text = "999";
             Check(!first.IsInputValid, "Out-of-range RGB is invalid");
@@ -163,7 +163,7 @@ internal static class SmokeChecks
             Check(!first.AreSlidersExpanded && !editor.IsVisible && !first.IsInputValid && red.Text == "999",
                 "Square retains slider expansion and unfinished input");
             var root = (VerticalStackLayout)first.Content;
-            Check(root.Children.IndexOf((IView)hex.Parent) < root.Children.IndexOf(body) && hex.IsVisible,
+            Check(root.Children.IndexOf((IView)hex.Parent.Parent.Parent) < root.Children.IndexOf(body) && hex.IsVisible,
                 "Hex remains above the visual selector outside collapsed sliders");
             hex.Text = "AABBCC";
             Check(first.IsInputValid && first.SelectedColour.ToHex() == "#AABBCC" && !first.AreSlidersExpanded,
@@ -175,6 +175,42 @@ internal static class SmokeChecks
             Check(first.AreSlidersExpanded && editor.IsVisible && red.Text == "170",
                 "Expanding sliders restores synchronized numeric controls");
             Check(!second.AreSlidersExpanded, "Slider expansion is independent for each chooser");
+            // Optional alpha: opt-in, CSS RRGGBBAA hex, A editor, and no effect on opaque instances.
+            Entry EntryFor(ColourChooser c, string description) => c.GetVisualTreeDescendants().OfType<Entry>().Single(e => SemanticProperties.GetDescription(e) == description);
+            var translucent = new ColourChooser { SelectedColour = Color.FromRgba(255, 0, 0, 128) };
+            Check(translucent.SelectedColour.Alpha == 1 && !translucent.IsAlphaEnabled, "Alpha is disabled by default and colours stay opaque");
+            translucent.IsAlphaEnabled = true;
+            Check(Math.Abs(translucent.SelectedColour.Alpha - 128 / 255f) < .001 && EntryFor(translucent, "Six or eight digit RGBA hexadecimal colour").Text == "FF000080",
+                "Enabling alpha after binding restores the requested translucency");
+            var alphaHex = EntryFor(translucent, "Six or eight digit RGBA hexadecimal colour");
+            alphaHex.Text = "#11223344";
+            Check(translucent.IsInputValid && translucent.SelectedColour.ToArgbHex(true) == "#44112233" && alphaHex.Text == "11223344",
+                "Eight-digit hex publishes RGBA in CSS order without duplicating #");
+            alphaHex.Text = "556677";
+            Check(translucent.IsInputValid && translucent.SelectedColour.Alpha == 1 && translucent.SelectedColour.ToHex() == "#556677",
+                "Six-digit hex is opaque when alpha is enabled");
+            var alphaEntry = EntryFor(translucent, "Alpha");
+            alphaEntry.Text = "300";
+            Check(!translucent.IsInputValid && translucent.SelectedColour.Alpha == 1, "Out-of-range alpha is invalid and keeps the last valid colour");
+            alphaEntry.Text = "64";
+            Check(translucent.IsInputValid && Math.Abs(translucent.SelectedColour.Alpha - 64 / 255f) < .001 && alphaHex.Text == "55667740",
+                "A editor updates alpha and hex");
+            var translucentModes = translucent.GetVisualTreeDescendants().OfType<ChoiceButtonGroup>().Single(p => SemanticProperties.GetDescription(p) == "RGB or HSV colour values");
+            translucentModes.SelectedIndex = 1;
+            Check(EntryFor(translucent, "Opacity percent").Text == (64 / 2.55).ToString("0.#", System.Globalization.CultureInfo.CurrentCulture),
+                "HSV mode shows opacity as a percentage");
+            translucentModes.SelectedIndex = 0;
+            translucent.ResetEditing(Color.FromRgba(0, 0, 255, 0));
+            Check(translucent.SelectedColour.Alpha == 0 && alphaHex.Text == "0000FF00", "ResetEditing keeps full transparency when alpha is enabled");
+            var strip = translucent.GetVisualTreeDescendants().OfType<VisualElement>().Single(e => SemanticProperties.GetDescription(e)?.StartsWith("Opacity gradient") == true);
+            Check(strip.IsVisible, "The opacity strip is shown when alpha is enabled");
+            translucent.IsAlphaEnabled = false;
+            Check(translucent.SelectedColour.Alpha == 1 && translucent.SelectedColour.ToHex() == "#0000FF" && !strip.IsVisible
+                && EntryFor(translucent, "Six digit RGB hexadecimal colour").Text == "0000FF",
+                "Disabling alpha makes the colour opaque and restores the six-digit editor");
+            Check(first.GetVisualTreeDescendants().OfType<Entry>().Any(e => SemanticProperties.GetDescription(e) == "Six digit RGB hexadecimal colour")
+                && !first.GetVisualTreeDescendants().OfType<VisualElement>().Single(e => SemanticProperties.GetDescription(e)?.StartsWith("Opacity gradient") == true).IsVisible,
+                "Opaque instances keep the six-digit editor and hide the opacity strip");
             foreach (var theme in new[] { AppTheme.Dark, AppTheme.Light, AppTheme.Unspecified })
                 Application.Current!.UserAppTheme = theme;
             Check(first.IsInputValid && second.SelectedColour.ToHex() == "#FFA500", "Theme changes preserve independent selections");

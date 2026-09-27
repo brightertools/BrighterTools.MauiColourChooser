@@ -5,7 +5,7 @@ using SkiaSharp.Views.Maui.Controls;
 using Maths = BrighterTools.ColourMath.ColourMath;
 namespace BrighterTools.MauiColourChooser;
 
-internal enum SurfaceKind { Wheel, Square, Hue, Saturation }
+internal enum SurfaceKind { Wheel, Square, Hue, Saturation, Alpha }
 internal sealed class ColourSurface : SKCanvasView
 {
     private readonly SurfaceKind kind;
@@ -18,12 +18,17 @@ internal sealed class ColourSurface : SKCanvasView
     public void SetDisplayBrightness(double value) { displayBrightness = Maths.Unit(value); InvalidateSurface(); }
     private bool dragging;
     public event EventHandler<HsvColour>? Edited;
+    private RgbColour alphaColour = new(255, 0, 0);
+    private double alpha = 1;
+    /// <summary>Alpha strip only: 0–1 opacity chosen by the pointer.</summary>
+    public event EventHandler<double>? AlphaEdited;
+    public void SetAlpha(RgbColour colour, double value) { alphaColour = colour; alpha = Maths.Unit(value); InvalidateSurface(); }
     public ColourSurface(SurfaceKind kind)
     {
         this.kind = kind;
         EnableTouchEvents = true;
-        HeightRequest = kind is SurfaceKind.Hue or SurfaceKind.Saturation ? 32 : 210;
-        SemanticProperties.SetDescription(this, kind == SurfaceKind.Wheel ? "Hue and saturation wheel. Its display brightness is controlled separately. Use the numeric controls for keyboard selection." : kind == SurfaceKind.Square ? "Saturation and brightness square" : kind == SurfaceKind.Saturation ? "Saturation gradient at the selected hue, shown from white to full colour. Selected brightness is controlled separately. Use the HSV saturation control for keyboard selection." : "Rainbow hue strip");
+        HeightRequest = kind is SurfaceKind.Hue or SurfaceKind.Saturation or SurfaceKind.Alpha ? 32 : 210;
+        SemanticProperties.SetDescription(this, kind == SurfaceKind.Alpha ? "Opacity gradient from transparent to the selected colour. Use the A control for keyboard selection." : kind == SurfaceKind.Wheel ? "Hue and saturation wheel. Its display brightness is controlled separately. Use the numeric controls for keyboard selection." : kind == SurfaceKind.Square ? "Saturation and brightness square" : kind == SurfaceKind.Saturation ? "Saturation gradient at the selected hue, shown from white to full colour. Selected brightness is controlled separately. Use the HSV saturation control for keyboard selection." : "Rainbow hue strip");
     }
     public void SetColour(HsvColour value) { hsv = value; InvalidateSurface(); }
     private SKRect SurfaceBounds(int w, int h)
@@ -40,6 +45,8 @@ internal sealed class ColourSurface : SKCanvasView
         canvas.Clear(SKColors.Transparent);
         var bounds = SurfaceBounds(e.Info.Width, e.Info.Height);
         if (bounds.Width <= 0 || bounds.Height <= 0) return;
+        float density = (float)(e.Info.Width / Math.Max(1, Width));
+        if (kind == SurfaceKind.Alpha) { PaintAlpha(canvas, bounds, density); return; }
         int w = Math.Clamp((int)bounds.Width, 2, 512), h = Math.Clamp((int)bounds.Height, 2, 512);
         // Wheel brightness is display state, independent of the loaded RGB. The saturation strip stays white-to-hue.
         double component = kind == SurfaceKind.Wheel ? displayBrightness : kind is SurfaceKind.Square or SurfaceKind.Saturation ? hsv.H : 0;
@@ -73,12 +80,36 @@ internal sealed class ColourSurface : SKCanvasView
             bounds.Left + (float)(kind == SurfaceKind.Hue ? hsv.H / 360 : hsv.S) * bounds.Width;
         float my = kind == SurfaceKind.Wheel ? bounds.MidY + (float)marker.Item2 * bounds.Height / 2 :
             kind is SurfaceKind.Hue or SurfaceKind.Saturation ? bounds.MidY : bounds.Top + (float)(1 - hsv.V) * bounds.Height;
-        float density = (float)(e.Info.Width / Math.Max(1, Width));
+        DrawMarker(canvas, mx, my, density);
+    }
+    private static void DrawMarker(SKCanvas canvas, float x, float y, float density)
+    {
         using var paint = new SKPaint { Style = SKPaintStyle.Stroke, IsAntialias = true };
         paint.Color = SKColors.Black; paint.StrokeWidth = 3 * density;
-        canvas.DrawCircle(mx, my, 5 * density, paint);
+        canvas.DrawCircle(x, y, 5 * density, paint);
         paint.Color = SKColors.White; paint.StrokeWidth = 1.5f * density;
-        canvas.DrawCircle(mx, my, 5 * density, paint);
+        canvas.DrawCircle(x, y, 5 * density, paint);
+    }
+    // A checkerboard shows through the transparent end so partial opacity is visible in light and dark themes.
+    private void PaintAlpha(SKCanvas canvas, SKRect bounds, float density)
+    {
+        using var light = new SKPaint { Color = new SKColor(0xFF, 0xFF, 0xFF) };
+        using var dark = new SKPaint { Color = new SKColor(0xCC, 0xCC, 0xCC) };
+        float cell = 6 * density;
+        canvas.Save();
+        canvas.ClipRect(bounds);
+        canvas.DrawRect(bounds, light);
+        for (int row = 0; bounds.Top + row * cell < bounds.Bottom; row++)
+            for (int col = row % 2; bounds.Left + col * cell < bounds.Right; col += 2)
+                canvas.DrawRect(SKRect.Create(bounds.Left + col * cell, bounds.Top + row * cell, cell, cell), dark);
+        using var gradient = new SKPaint
+        {
+            Shader = SKShader.CreateLinearGradient(new SKPoint(bounds.Left, 0), new SKPoint(bounds.Right, 0),
+                [new SKColor(alphaColour.R, alphaColour.G, alphaColour.B, 0), new SKColor(alphaColour.R, alphaColour.G, alphaColour.B, 255)], SKShaderTileMode.Clamp)
+        };
+        canvas.DrawRect(bounds, gradient);
+        canvas.Restore();
+        DrawMarker(canvas, bounds.Left + (float)alpha * bounds.Width, bounds.MidY, density);
     }
     protected override void OnTouch(SKTouchEventArgs e)
     {
@@ -90,7 +121,12 @@ internal sealed class ColourSurface : SKCanvasView
         {
             dragging = kind == SurfaceKind.Wheel ? Math.Pow(x * 2 - 1, 2) + Math.Pow(y * 2 - 1, 2) <= 1 : bounds.Contains(e.Location);
         }
-        if (dragging && e.ActionType is SKTouchAction.Pressed or SKTouchAction.Moved or SKTouchAction.Released)
+        if (dragging && kind == SurfaceKind.Alpha && e.ActionType is SKTouchAction.Pressed or SKTouchAction.Moved or SKTouchAction.Released)
+        {
+            alpha = Maths.Unit(x);
+            AlphaEdited?.Invoke(this, alpha); InvalidateSurface(); e.Handled = true;
+        }
+        else if (dragging && e.ActionType is SKTouchAction.Pressed or SKTouchAction.Moved or SKTouchAction.Released)
         {
             hsv = kind switch
             {

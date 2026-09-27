@@ -57,4 +57,8 @@ internal static class ColourConvert
     public static RgbColour Rgb(Color c) => new(Maths.Channel(c.Red), Maths.Channel(c.Green), Maths.Channel(c.Blue));
     public static Color Maui(RgbColour c) => Color.FromRgb(c.R, c.G, c.B);
     public static Color Opaque(Color? c) => c == null ? Colors.Red : Maui(Rgb(c));
+    public static Color Maui(RgbColour c, byte alpha) => Color.FromRgba(c.R, c.G, c.B, alpha);
+    public static byte Alpha(Color? c) => c == null ? (byte)255 : Maths.Channel(c.Alpha);
+    /// <summary>Quantizes to 8-bit RGBA so published colours always match their hex text.</summary>
+    public static Color Quantized(Color? c) => c == null ? Colors.Red : Maui(Rgb(c), Alpha(c));
 }

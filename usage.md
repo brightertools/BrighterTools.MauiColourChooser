@@ -58,7 +58,8 @@ The host may use a ScrollView or resize its window; the component does neither. 
 
 | Member | Purpose |
 | --- | --- |
-| `SelectedColour` | Two-way bindable MAUI `Color`; coerced to opaque 8-bit RGB. Null becomes red. |
+| `SelectedColour` | Two-way bindable MAUI `Color`; coerced to opaque 8-bit RGB, or 8-bit RGBA when `IsAlphaEnabled`. Null becomes red. |
+| `IsAlphaEnabled` | Bindable, default false. Shows an opacity strip, an A editor and eight-digit RGBA hex, and keeps alpha in `SelectedColour`. |
 | `ColourChanged` | Event carrying `ColourChangedEventArgs.Colour`; reflects valid edits/updates, not a confirmed selection. |
 | `IsInputValid` | Read-only bindable validity state. Invalid edits leave the last valid colour unchanged. |
 | `VisualMode` | Two-way bindable `ColourChooserMode.Wheel` or `.Square`. |
@@ -75,6 +76,14 @@ Use a new binding-context instance for independently editable colours. Sharing o
 RGB fields accept 0-255; hue accepts 0-360 degrees; saturation and value accept 0-100%. Hex accepts six hexadecimal digits and an optional leading `#`, displaying uppercase.
 
 Incomplete/invalid text is kept for correction and shows inline feedback. It does not publish an invalid colour. Valid text or a visual selector resolves it. Changing layout/theme or collapsing sliders preserves unfinished input. Hosts should observe `IsInputValid` to disable confirmation or copying.
+
+With `IsAlphaEnabled`, hex accepts six digits (opaque) or eight digits in CSS `RRGGBBAA` order, and always displays eight. The A editor accepts whole numbers 0–255 in RGB mode and 0–100% in HSV mode.
+
+```xml
+<colour:ColourChooser IsAlphaEnabled="True" SelectedColour="{Binding DraftColour, Mode=TwoWay}" />
+```
+
+The order of `IsAlphaEnabled` and the binding does not matter: alpha supplied while disabled is remembered and applied when alpha is enabled, unless the user edits the colour first. Disabling alpha makes the selection opaque.
 
 Call `ResetEditing` to explicitly start a new editing session:
 

@@ -131,4 +131,17 @@ public class ColourMathTests
         Assert.Equal("000000", Maths.ToRgb(Maths.SquareAt(1, 1, 120)).Hex);
         Assert.Equal(new HsvColour(120, 0, 0), Maths.SquareAt(-1, 2, 120));
     }
+    [Theory]
+    [InlineData("#12345680", "123456", 0x80)][InlineData("abcdef00", "ABCDEF", 0)]
+    [InlineData(" #336699 ", "336699", 255)][InlineData("336699FF", "336699", 255)]
+    public void Alpha_hex_accepts_six_or_eight_digits_in_css_order(string text, string rgb, int alpha)
+    {
+        Assert.True(Maths.TryHexWithAlpha(text, out var colour, out byte a));
+        Assert.Equal(rgb, colour.Hex); Assert.Equal(alpha, a);
+        Assert.Equal(rgb + alpha.ToString("X2"), colour.HexWithAlpha(a));
+    }
+    [Theory]
+    [InlineData("")][InlineData("#1234567")][InlineData("12345")][InlineData("#12345G78")][InlineData("123456789")][InlineData(null)]
+    public void Alpha_hex_rejects_other_lengths_and_characters(string? text) => Assert.False(Maths.TryHexWithAlpha(text, out _, out _));
+    [Fact] public void Six_digit_parser_still_rejects_alpha_hex() => Assert.False(Maths.TryHex("#12345680", out _));
 }
