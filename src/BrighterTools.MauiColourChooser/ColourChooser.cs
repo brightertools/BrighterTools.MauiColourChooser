@@ -345,7 +345,7 @@ public sealed class ColourChooser : ContentView
     }
     private void SetHsv(HsvColour value, Entry? origin = null)
     {
-        hsv = new(Maths.Hue(value.H), Maths.Unit(value.S), Maths.Unit(value.V));
+        hsv = new(ColourConvert.EditorHue(value.H), Maths.Unit(value.S), Maths.Unit(value.V));
         rgb = Maths.ToRgb(hsv); wheelBrightness = hsv.V; Publish(origin);
     }
     private void Publish(Entry? origin)
