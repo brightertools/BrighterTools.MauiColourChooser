@@ -131,9 +131,9 @@ internal sealed class ColourSurface : SKCanvasView
             hsv = kind switch
             {
                 SurfaceKind.Wheel => Maths.WheelAt(x * 2 - 1, y * 2 - 1, hsv, curve),
-                SurfaceKind.Square => Maths.SquareAt(x, y, hsv.H),
-                SurfaceKind.Saturation => Maths.SaturationRowAt(x, hsv),
-                _ => hsv with { H = Maths.Hue(Maths.Unit(x) * 360) }
+                SurfaceKind.Square => Maths.SquareAt(x, y, hsv.H) with { H = hsv.H },
+                SurfaceKind.Saturation => Maths.SaturationRowAt(x, hsv) with { H = hsv.H },
+                _ => hsv with { H = Maths.Unit(x) * 360 }
             };
             Edited?.Invoke(this, hsv); InvalidateSurface(); e.Handled = true;
         }
