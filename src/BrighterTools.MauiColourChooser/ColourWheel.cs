@@ -44,7 +44,7 @@ public sealed class ColourWheel : ContentView
     {
         if (updating) return;
         updating = true;
-        Hsv = new(Maths.Hue(hsv.H), Maths.Unit(hsv.S), Maths.Unit(hsv.V));
+        Hsv = new(ColourConvert.EditorHue(hsv.H), Maths.Unit(hsv.S), Maths.Unit(hsv.V));
         SelectedColour = ColourConvert.Maui(Maths.ToRgb(Hsv));
         surface.SetColour(Hsv);
         updating = false;
@@ -54,6 +54,9 @@ public sealed class ColourWheel : ContentView
 }
 internal static class ColourConvert
 {
+    // 360 and 0 produce the same RGB, but are distinct endpoints in a linear editor.
+    // Keep the selected endpoint; colour conversion still uses circular hue maths.
+    public static double EditorHue(double value) => value == 360 ? 360 : Maths.Hue(value);
     public static RgbColour Rgb(Color c) => new(Maths.Channel(c.Red), Maths.Channel(c.Green), Maths.Channel(c.Blue));
     public static Color Maui(RgbColour c) => Color.FromRgb(c.R, c.G, c.B);
     public static Color Opaque(Color? c) => c == null ? Colors.Red : Maui(Rgb(c));
